@@ -1,35 +1,70 @@
-name: Daily Commit
+# name: Daily Commit
+
+# on:
+#   schedule:
+#     - cron: '0 0 * * *'  # Runs daily at midnight UTC
+#   workflow_dispatch:  # Allows manual triggering
+
+# jobs:
+#   daily-commit:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - uses: actions/checkout@v3
+#       - run: |
+#             date +%Y-%m-%d
+#             git add .
+#             git commit -m "Daily commit - $(date +%Y-%m-%d)"
+#             git push origin HEAD:main
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
+
+#       - name: Make a change
+#         run: |
+#           date > last-updated.txt
+
+#       - name: Configure Git (22f3000985@ds.study.iitm.ac.in)
+#         run: |
+#           git config --global user.name "GitHub Action"
+#           git config --global user.email "22f3000985@ds.study.iitm.ac.in"
+
+#       - name: Commit and push changes
+#         run: |
+#           git add last-updated.txt
+#           git commit -m "Daily update: $(date)"
+#           git push
+
+
+
+name: Scrape IMDb Top 250
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
-  workflow_dispatch:  # Allows manual triggering
+    # Runs at 00:00 UTC every day
+    - cron: "0 0 * * *"
+  workflow_dispatch: # Allow manual triggers
 
 jobs:
-  daily-commit:
+  scrape-imdb:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@v3
-      - run: |
-            date +%Y-%m-%d
-            git add .
-            git commit -m "Daily commit - $(date +%Y-%m-%d)"
-            git push origin HEAD:main
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Make a change
-        run: |
-          date > last-updated.txt
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
-      - name: Configure Git (22f3000985@ds.study.iitm.ac.in)
-        run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "22f3000985@ds.study.iitm.ac.in"
+      - name: Run scraper
+        run: | # python
+          uv run --with httpx,lxml,cssselect python scrape.py
 
       - name: Commit and push changes
         run: |
-          git add last-updated.txt
-          git commit -m "Daily update: $(date)"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add *.json
+          git commit -m "Update IMDb Top 250 data [skip ci]" || exit 0
           git push
